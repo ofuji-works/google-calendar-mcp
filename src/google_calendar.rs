@@ -52,10 +52,10 @@ impl GoogleCalendar {
         "予定一覧のダミーデータ".to_string()
     }
 
-    #[rmcp::tool(aggr, description = "新しい予定を作成する")]
+    #[rmcp::tool(description = "新しい予定を作成する")]
     pub async fn create_event(
         &self,
-        args: CreateEventArgs,
+        #[rmcp::tool(aggr)] args: CreateEventArgs,
     ) -> anyhow::Result<String> {
         let api_key = env::var("GOOGLE_CALENDAR_API_KEY")
             .map_err(|_| anyhow::anyhow!("GOOGLE_CALENDAR_API_KEY environment variable not set"))?;
@@ -104,8 +104,8 @@ impl GoogleCalendar {
         }
     }
 
-    #[rmcp::tool(aggr, description = "新しい予定を追加する（簡易版）")]
-    pub async fn add_event(&self, args: AddEventArgs) -> anyhow::Result<String> {
+    #[rmcp::tool(description = "新しい予定を追加する（簡易版）")]
+    pub async fn add_event(&self, #[rmcp::tool(aggr)] args: AddEventArgs) -> anyhow::Result<String> {
         // 1時間後を終了時間とする簡易実装
         let start_dt = chrono::DateTime::parse_from_rfc3339(&args.start_time)
             .map_err(|_| anyhow::anyhow!("Invalid start_time format. Use RFC3339 format (e.g., 2023-12-25T10:00:00+09:00)"))?;
