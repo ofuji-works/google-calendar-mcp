@@ -1,0 +1,9 @@
+{
+    "servers": {
+        "google-calendar": {
+            "type": "stdio",
+            "command": "google-calendar-mcp",
+            "args": []
+        }
+    }
+}

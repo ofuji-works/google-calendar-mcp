@@ -1,0 +1,18 @@
+[env]
+API_KEY = "your_api_key_here"
+
+[tasks.run]
+command = "cargo"
+args = ["run", "@"]
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.symlink]
+command = "sudo"
+args = ["ln", "-s", "${CARGO_MAKE_WORKING_DIRECTORY}/target/release/google-calendar-mcp", "/usr/local/bin/google-calendar-mcp"]
+
+[tasks.unlink]
+command = "sudo"
+args = ["unlink", "/usr/local/bin/google-calendar-mcp"]
