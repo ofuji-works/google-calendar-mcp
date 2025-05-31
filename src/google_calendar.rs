@@ -3,6 +3,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
 
+use rmcp::tool;
+
 #[derive(derive_new::new, Clone)]
 pub struct GoogleCalendar;
 
@@ -31,7 +33,7 @@ struct GoogleCalendarResponse {
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
-struct CreateEventArgs {
+pub struct CreateEventArgs {
     summary: String,
     description: Option<String>,
     start_datetime: String,
@@ -40,31 +42,30 @@ struct CreateEventArgs {
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
-struct AddEventArgs {
+pub struct AddEventArgs {
     title: String,
     start_time: String,
 }
 
-#[rmcp::tool(tool_box)]
+#[tool(tool_box)]
 impl GoogleCalendar {
-    #[rmcp::tool(description = "Googleカレンダーの予定一覧を取得する")]
+    #[tool(description = "Googleカレンダーの予定一覧を取得する")]
     pub fn list_events(&self) -> String {
         // TODO: GoogleカレンダーAPI連携実装
         "予定一覧のダミーデータ".to_string()
     }
 
-    #[rmcp::tool(description = "新しい予定を作成する")]
+    #[tool(description = "新しい予定を作成する")]
     pub async fn create_event(
         &self,
-        #[rmcp::tool(aggr)] args: CreateEventArgs,
+        #[tool(aggr)] args: CreateEventArgs,
     ) -> Result<CallToolResult, rmcp::Error> {
         let api_key = env::var("GOOGLE_CALENDAR_API_KEY").unwrap();
-        
-        let calendar_id = env::var("GOOGLE_CALENDAR_ID")
-            .unwrap_or_else(|_| "primary".to_string());
-        
+
+        let calendar_id = env::var("GOOGLE_CALENDAR_ID").unwrap_or_else(|_| "primary".to_string());
+
         let tz = args.timezone.unwrap_or_else(|| "Asia/Tokyo".to_string());
-        
+
         let event = GoogleCalendarEvent {
             summary: args.summary,
             description: args.description,
@@ -89,31 +90,40 @@ impl GoogleCalendar {
             .header("Content-Type", "application/json")
             .json(&event)
             .send()
-            .await.unwrap();
+            .await
+            .unwrap();
 
         let created_event: GoogleCalendarResponse = response.json().await.unwrap();
 
         Ok(CallToolResult::success(vec![Content::text(format!(
             "予定 '{}' を作成しました。ID: {}",
-            created_event.summary.unwrap_or_else(|| "Unknown".to_string()),
+            created_event
+                .summary
+                .unwrap_or_else(|| "Unknown".to_string()),
             created_event.id.unwrap_or_else(|| "Unknown".to_string())
         ))]))
     }
 
-    #[rmcp::tool(description = "新しい予定を追加する（簡易版）")]
-    pub async fn add_event(&self, #[rmcp::tool(aggr)]args: AddEventArgs) -> Result<CallToolResult, rmcp::Error> {
+    #[tool(description = "新しい予定を追加する（簡易版）")]
+    pub async fn add_event(
+        &self,
+        #[tool(aggr)] args: AddEventArgs,
+    ) -> Result<CallToolResult, rmcp::Error> {
         // 1時間後を終了時間とする簡易実装
         let start_dt = chrono::DateTime::parse_from_rfc3339(&args.start_time).unwrap();
-        
+
         let end_dt = start_dt + chrono::Duration::hours(1);
-        
-        let result = self.create_event(CreateEventArgs {
-            summary: args.title,
-            description: None,
-            start_datetime: start_dt.to_rfc3339(),
-            end_datetime: end_dt.to_rfc3339(),
-            timezone: None,
-        }).await.unwrap();
+
+        let result = self
+            .create_event(CreateEventArgs {
+                summary: args.title,
+                description: None,
+                start_datetime: start_dt.to_rfc3339(),
+                end_datetime: end_dt.to_rfc3339(),
+                timezone: None,
+            })
+            .await
+            .unwrap();
 
         Ok(result)
     }
