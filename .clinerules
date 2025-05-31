@@ -25,6 +25,8 @@
 - `cargo fmt`でコードフォーマットを統一する
 - `cargo clippy`の警告に対応する
 - テストコードを適切に記述する
+- `src/main.rs`では`serve`のみを行うこと
+- `src/google_calendar.rs`に`ServerHandler`とtoolsの実装を行うこと
 
 ### Git管理
 - 意味のあるコミットメッセージを作成する
