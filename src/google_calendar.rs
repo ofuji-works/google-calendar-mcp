@@ -29,6 +29,21 @@ struct GoogleCalendarResponse {
     html_link: Option<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct CreateEventArgs {
+    summary: String,
+    description: Option<String>,
+    start_datetime: String,
+    end_datetime: String,
+    timezone: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct AddEventArgs {
+    title: String,
+    start_time: String,
+}
+
 #[rmcp::tool(tool_box)]
 impl GoogleCalendar {
     #[rmcp::tool(description = "Googleカレンダーの予定一覧を取得する")]
@@ -37,14 +52,10 @@ impl GoogleCalendar {
         "予定一覧のダミーデータ".to_string()
     }
 
-    #[rmcp::tool(description = "新しい予定を作成する")]
+    #[rmcp::tool(aggr, description = "新しい予定を作成する")]
     pub async fn create_event(
         &self,
-        summary: String,
-        description: Option<String>,
-        start_datetime: String,
-        end_datetime: String,
-        timezone: Option<String>,
+        args: CreateEventArgs,
     ) -> anyhow::Result<String> {
         let api_key = env::var("GOOGLE_CALENDAR_API_KEY")
             .map_err(|_| anyhow::anyhow!("GOOGLE_CALENDAR_API_KEY environment variable not set"))?;
@@ -52,17 +63,17 @@ impl GoogleCalendar {
         let calendar_id = env::var("GOOGLE_CALENDAR_ID")
             .unwrap_or_else(|_| "primary".to_string());
         
-        let tz = timezone.unwrap_or_else(|| "Asia/Tokyo".to_string());
+        let tz = args.timezone.unwrap_or_else(|| "Asia/Tokyo".to_string());
         
         let event = GoogleCalendarEvent {
-            summary,
-            description,
+            summary: args.summary,
+            description: args.description,
             start: EventDateTime {
-                date_time: start_datetime,
+                date_time: args.start_datetime,
                 time_zone: tz.clone(),
             },
             end: EventDateTime {
-                date_time: end_datetime,
+                date_time: args.end_datetime,
                 time_zone: tz,
             },
         };
@@ -93,21 +104,21 @@ impl GoogleCalendar {
         }
     }
 
-    #[rmcp::tool(description = "新しい予定を追加する（簡易版）")]
-    pub async fn add_event(&self, title: String, start_time: String) -> anyhow::Result<String> {
+    #[rmcp::tool(aggr, description = "新しい予定を追加する（簡易版）")]
+    pub async fn add_event(&self, args: AddEventArgs) -> anyhow::Result<String> {
         // 1時間後を終了時間とする簡易実装
-        let start_dt = chrono::DateTime::parse_from_rfc3339(&start_time)
+        let start_dt = chrono::DateTime::parse_from_rfc3339(&args.start_time)
             .map_err(|_| anyhow::anyhow!("Invalid start_time format. Use RFC3339 format (e.g., 2023-12-25T10:00:00+09:00)"))?;
         
         let end_dt = start_dt + chrono::Duration::hours(1);
         
-        self.create_event(
-            title,
-            None,
-            start_dt.to_rfc3339(),
-            end_dt.to_rfc3339(),
-            None,
-        ).await
+        self.create_event(CreateEventArgs {
+            summary: args.title,
+            description: None,
+            start_datetime: start_dt.to_rfc3339(),
+            end_datetime: end_dt.to_rfc3339(),
+            timezone: None,
+        }).await
     }
 }
 
