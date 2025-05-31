@@ -52,10 +52,10 @@ impl GoogleCalendar {
         "予定一覧のダミーデータ".to_string()
     }
 
-    #[rmcp::tool(description = "新しい予定を作成する")]
+    #[rmcp::tool(aggr, description = "新しい予定を作成する")]
     pub async fn create_event(
         &self,
-        #[rmcp::tool(aggr)] args: CreateEventArgs,
+        args: CreateEventArgs,
     ) -> anyhow::Result<String> {
         let api_key = env::var("GOOGLE_CALENDAR_API_KEY")
             .map_err(|_| anyhow::anyhow!("GOOGLE_CALENDAR_API_KEY environment variable not set"))?;
