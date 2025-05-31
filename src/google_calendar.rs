@@ -1,5 +1,4 @@
 use rmcp::model::{ServerCapabilities, ServerInfo};
-use rmcp::ServiceExt;
 
 #[derive(derive_new::new, Clone)]
 pub struct GoogleCalendar;
